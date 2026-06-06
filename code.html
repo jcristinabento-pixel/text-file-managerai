@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text File Editor & Downloader</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial,sans-serif;
+        }
+
+        body{
+            background:#f0f2f5;
+            padding:2rem;
+            max-width:900px;
+            margin:auto;
+        }
+
+        h1{
+            text-align:center;
+            color:#1a73e8;
+            margin-bottom:2rem;
+        }
+
+        .card{
+            background:white;
+            padding:1.5rem;
+            border-radius:10px;
+            box-shadow:0 2px 10px rgba(0,0,0,.1);
+            margin-bottom:1.5rem;
+        }
+
+        input[type="file"]{
+            width:100%;
+            margin-bottom:1rem;
+        }
+
+        .search-container{
+            position:relative;
+            margin-bottom:1rem;
+        }
+
+        .search-icon{
+            position:absolute;
+            left:12px;
+            top:50%;
+            transform:translateY(-50%);
+        }
+
+        #searchInput{
+            width:100%;
+            padding:12px 12px 12px 40px;
+            border:1px solid #ddd;
+            border-radius:6px;
+            font-size:16px;
+        }
+
+        .button-group{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+
+        button{
+            flex:1;
+            min-width:150px;
+            border:none;
+            padding:12px;
+            border-radius:6px;
+            cursor:pointer;
+            color:white;
+            font-size:15px;
+        }
+
+        #downloadBtn{
+            background:#1a73e8;
+        }
+
+        #downloadBtn:hover{
+            background:#1557b0;
+        }
+
+        #saveBtn{
+            background:#34a853;
+        }
+
+        #saveBtn:hover{
+            background:#26843f;
+        }
+
+        .file-content{
+            background:white;
+            min-height:400px;
+            max-height:600px;
+            overflow:auto;
+            padding:1rem;
+            border-radius:10px;
+            box-shadow:0 2px 10px rgba(0,0,0,.1);
+            white-space:pre-wrap;
+            line-height:1.6;
+            outline:none;
+            border:2px solid transparent;
+        }
+
+        .file-content:focus{
+            border-color:#1a73e8;
+        }
+
+        .highlight{
+            background:yellow;
+            color:black;
+        }
+
+        .status{
+            margin-top:10px;
+            color:#666;
+            font-size:14px;
+        }
+
+        .hidden{
+            display:none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📄 Text File Manager</h1>
+
+    <div class="card">
+
+        <input type="file" id="fileInput" accept=".txt,.py,.json,.csv,.md">
+
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search text..."
+            >
+        </div>
+
+        <div class="button-group">
+            <button id="downloadBtn" class="hidden">
+                Download File
+            </button>
+
+            <button id="saveBtn" class="hidden">
+                Save Changes
+            </button>
+        </div>
+
+        <div class="status" id="status">
+            No file loaded.
+        </div>
+
+    </div>
+
+    <div
+        id="fileContent"
+        class="file-content"
+        contenteditable="true"
+        spellcheck="false"
+    ></div>
+
+<script>
+
+const fileInput = document.getElementById("fileInput");
+const searchInput = document.getElementById("searchInput");
+const fileContent = document.getElementById("fileContent");
+const downloadBtn = document.getElementById("downloadBtn");
+const saveBtn = document.getElementById("saveBtn");
+const statusText = document.getElementById("status");
+
+let currentFileName = "edited-file.txt";
+let currentContent = "";
+
+fileInput.addEventListener("change", e => {
+
+    const file = e.target.files[0];
+
+    if(!file) return;
+
+    currentFileName = file.name;
+
+    const reader = new FileReader();
+
+    reader.onload = event => {
+
+        currentContent = event.target.result;
+
+        fileContent.textContent = currentContent;
+
+        downloadBtn.classList.remove("hidden");
+        saveBtn.classList.remove("hidden");
+
+        statusText.textContent =
+            `Loaded: ${file.name}`;
+    };
+
+    reader.readAsText(file);
+
+});
+
+saveBtn.addEventListener("click", () => {
+
+    currentContent = fileContent.innerText;
+
+    statusText.textContent =
+        "Changes saved in memory.";
+
+});
+
+searchInput.addEventListener("input", () => {
+
+    const term = searchInput.value.trim();
+
+    const text = fileContent.innerText;
+
+    if(term === ""){
+
+        fileContent.textContent = text;
+        return;
+
+    }
+
+    const escaped =
+        term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const regex =
+        new RegExp(`(${escaped})`, "gi");
+
+    fileContent.innerHTML =
+        text.replace(
+            regex,
+            "<span class='highlight'>$1</span>"
+        );
+
+});
+
+downloadBtn.addEventListener("click", () => {
+
+    const editedText = fileContent.innerText;
+
+    const blob = new Blob(
+        [editedText],
+        {type:"text/plain"}
+    );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const a =
+        document.createElement("a");
+
+    a.href = url;
+    a.download = currentFileName;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+
+});
+
+</script>
+
+</body>
+</html>
